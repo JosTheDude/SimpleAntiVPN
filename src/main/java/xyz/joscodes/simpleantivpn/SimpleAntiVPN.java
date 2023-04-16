@@ -1,28 +1,45 @@
 package xyz.joscodes.simpleantivpn;
 
+import kong.unirest.HttpResponse;
+import kong.unirest.JsonNode;
+import kong.unirest.Unirest;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.json.JSONObject;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
+
 import java.util.Objects;
 import java.util.logging.Level;
 
 public class SimpleAntiVPN extends JavaPlugin implements Listener {
+
 	private String kickMessage;
 
-	private final String apiKey = getConfig().getString("apiKey");
+	private String apiKey;
 
 	@Override
 	public void onEnable() {
 		// Load configuration values
 		getConfig().options().copyDefaults(true);
+
+		String rawKickMessage = getConfig().getString("kickMessage");
+
+		if (rawKickMessage != null) {
+			kickMessage = ChatColor.translateAlternateColorCodes('&', rawKickMessage);
+		} else {
+			kickMessage = ChatColor.translateAlternateColorCodes('&', "&cThis network disallows VPN usage!");
+		}
+
+		apiKey = getConfig().getString("apiKey");
+
+		if (apiKey == null) {
+			getLogger().log(Level.WARNING, "You have not set your API key in the config.yml file, thus, this plugin will be disabled.");
+			getServer().getPluginManager().disablePlugin(this);
+		}
+
 		saveConfig();
-		kickMessage = getConfig().getString("kickMessage");
 
 		// Register event listener
 		getServer().getPluginManager().registerEvents(this, this);
@@ -35,40 +52,29 @@ public class SimpleAntiVPN extends JavaPlugin implements Listener {
 		String isVPN = checkVPN(ipAddress);
 		boolean blockVPNs = getConfig().getBoolean("blockVPNs");
 
-		System.out.println("VPN: " + isVPN);
-
-		if (isVPN == "yes") {
+		if (Objects.equals(isVPN, "yes")) {
 			if (!blockVPNs) {
 				return;
 			}
+			Bukkit.getLogger().info("Detected VPN for player: " + event.getPlayer().getName());
 			event.getPlayer().kickPlayer(kickMessage);
 		}
 	}
 
 	private String checkVPN(String ipAddress) {
 		try {
-			URL url = new URL("https://proxycheck.io/v2/" + ipAddress + "?key=" + apiKey + "&vpn=1");
+			String url = "https://proxycheck.io/v2/" + ipAddress + "?key=" + apiKey + "&vpn=1";
 
-			HttpURLConnection con = (HttpURLConnection) url.openConnection();
-			con.setRequestMethod("GET");
-			con.setRequestProperty("User-Agent", "Mozilla/5.0");
+			HttpResponse<JsonNode> response = Unirest.get(url)
+					.header("User-Agent", "Mozilla/5.0")
+					.asJson();
 
-			int responseCode = con.getResponseCode();
-			if (responseCode == HttpURLConnection.HTTP_OK) {
-				BufferedReader in = new BufferedReader(new InputStreamReader(
-						con.getInputStream()));
-				String inputLine;
-				StringBuilder response = new StringBuilder();
-				while ((inputLine = in.readLine()) != null) {
-					response.append(inputLine);
-				}
-				in.close();
-				JSONObject jsonObject = new JSONObject(response.toString());
-
-				getLogger().log(Level.INFO, "Response: " + response);
+			int responseCode = response.getStatus();
+			if (responseCode == 200) {
+				kong.unirest.json.JSONObject jsonObject = response.getBody().getObject();
 
 				if (jsonObject.has(ipAddress)) {
-					JSONObject ipObject = jsonObject.getJSONObject(ipAddress);
+					kong.unirest.json.JSONObject ipObject = jsonObject.getJSONObject(ipAddress);
 					if (ipObject.has("proxy")) {
 						return ipObject.getString("proxy");
 					} else {
@@ -77,11 +83,14 @@ public class SimpleAntiVPN extends JavaPlugin implements Listener {
 				} else {
 					getLogger().log(Level.WARNING, "Response from Proxy Check does not contain the IP address: " + ipAddress);
 				}
+			} else {
+				getLogger().log(Level.WARNING, "Proxy Check returned a non-200 response code: " + responseCode);
 			}
 		} catch (Exception e) {
 			getLogger().log(Level.WARNING, "Failed to get proxy value for " + ipAddress, e);
 		}
 		return null;
 	}
+
 
 }

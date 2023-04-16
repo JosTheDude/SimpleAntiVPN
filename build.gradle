@@ -20,6 +20,7 @@ repositories {
 
 dependencies {
     implementation 'org.json:json:20230227'
+    implementation 'com.konghq:unirest-java:3.11.09'
     compileOnly "org.spigotmc:spigot-api:1.16.5-R0.1-SNAPSHOT"
 }
 
@@ -50,8 +51,4 @@ processResources {
 
 shadowJar {
     archiveFileName = "${project.name}-all.jar"
-    dependencies {
-        include(dependency('org.spigotmc:spigot-api'))
-        include(dependency('org.json:json'))
-    }
 }
