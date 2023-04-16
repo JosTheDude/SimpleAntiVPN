@@ -1,2 +1,3 @@
-api-key: 'your-api-key'
-block-vpn: true
+apiKey: YOUR_API_KEY
+blockVPNs: true
+kickMessage: '&cSorry, VPNs are not allowed on this server.'
