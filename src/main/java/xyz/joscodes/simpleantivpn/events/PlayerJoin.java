@@ -7,6 +7,7 @@ import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import xyz.joscodes.simpleantivpn.SimpleAntiVPN;
 import xyz.joscodes.simpleantivpn.checks.CheckVPN;
 
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -25,7 +26,9 @@ public class PlayerJoin implements Listener {
 	@EventHandler
 	public void on(AsyncPlayerPreLoginEvent event) {
 
-		String ipAddress = Arrays.toString(Objects.requireNonNull(event.getAddress()).getAddress());
+		InetAddress address = event.getAddress();
+
+		String ipAddress = address.getHostAddress();
 
 		String isVPN = CheckVPN.checkVPN(ipAddress);
 		boolean blockVPNs = SimpleAntiVPN.blockVPNs;

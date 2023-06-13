@@ -1,6 +1,5 @@
 apiKey: YOUR_API_KEY
 blockVPNs: true
 kickMessage: '&cSorry, VPNs are not allowed on this server.'
-exempt-players:
-  - 'SkipTurn'
+exemptPlayers:
   - 'a52e4842-3a09-4cad-8e91-2160399b766f'
