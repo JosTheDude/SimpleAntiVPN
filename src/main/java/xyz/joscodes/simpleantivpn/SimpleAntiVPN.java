@@ -5,6 +5,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import xyz.joscodes.simpleantivpn.events.PlayerJoin;
 
+import java.util.List;
 import java.util.logging.Level;
 
 public class SimpleAntiVPN extends JavaPlugin implements Listener {
@@ -41,8 +42,11 @@ public class SimpleAntiVPN extends JavaPlugin implements Listener {
 		saveConfig();
 
 		// Register event listener
-		getServer().getPluginManager().registerEvents(new PlayerJoin(), this);
+		getServer().getPluginManager().registerEvents(new PlayerJoin(this), this);
 	}
 
 
+	public List<String> getExemptPlayers() {
+		return getConfig().getStringList("exemptPlayers");
+	}
 }
